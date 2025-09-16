@@ -26,7 +26,9 @@ https://whatsapp.com/channel/0029VakUEfb4o7qVdkwPk83E
 
 // clear auth dir if exists
 if (fs.existsSync("./auth_info_baileys")) {
-  fs.emptyDirSync(__dirname + "/auth_info_baileys");
+  try {
+    fs.emptyDirSync(__dirname + "/auth_info_baileys");
+  } catch (e) {}
 }
 
 router.get("/", async (req, res) => {
@@ -135,7 +137,7 @@ SESSION-ID ==> ${Scan_Id}
             console.log("Connection closed with bot. Please run again.");
             console.log(reason);
             await delay(5000);
-            exec("pm2 restart gifted");
+            exec("pm2 restart gifted"); // <-- check your pm2 name here
             process.exit(0);
           }
         }
@@ -143,17 +145,21 @@ SESSION-ID ==> ${Scan_Id}
     } catch (err) {
       console.log(err);
       exec("pm2 restart gifted");
-      fs.emptyDirSync(__dirname + "/auth_info_baileys");
+      try {
+        fs.emptyDirSync(__dirname + "/auth_info_baileys");
+      } catch (e) {}
     }
   }
 
-  SUHAIL().catch(async (err) => {
+  try {
+    await SUHAIL();
+  } catch (err) {
     console.log(err);
-    fs.emptyDirSync(__dirname + "/auth_info_baileys");
+    try {
+      fs.emptyDirSync(__dirname + "/auth_info_baileys");
+    } catch (e) {}
     exec("pm2 restart gifted");
-  });
-
-  return await SUHAIL();
+  }
 });
 
 module.exports = router;
