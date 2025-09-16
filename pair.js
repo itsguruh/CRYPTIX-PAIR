@@ -1,3 +1,5 @@
+// pair.js
+const { exec } = require("child_process");
 const { upload } = require("./mega.js");
 const express = require("express");
 let router = express.Router();
@@ -27,7 +29,8 @@ if (fs.existsSync("./auth_info_baileys")) {
   fs.emptyDirSync(__dirname + "/auth_info_baileys");
 }
 
-router.get("/", async (req, res) => {
+// ✅ Route fixed to /code
+router.get("/code", async (req, res) => {
   const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -45,8 +48,6 @@ router.get("/", async (req, res) => {
     const { state, saveCreds } = await useMultiFileAuthState(
       __dirname + "/auth_info_baileys"
     );
-
-    let sessionId = null;
 
     try {
       let sock = makeWASocket({
@@ -83,16 +84,16 @@ router.get("/", async (req, res) => {
           );
 
           const string_session = mega_url.replace("https://mega.nz/file/", "");
-          sessionId = string_session;
+          const Scan_Id = string_session;
 
           console.log(`
 ====================  SESSION ID  ==========================                   
-SESSION-ID ==> ${sessionId}
+SESSION-ID ==> ${Scan_Id}
 ------------------------------------------------------------
 `);
 
           try {
-            let msgsss = await sock.sendMessage(user, { text: sessionId });
+            let msgsss = await sock.sendMessage(user, { text: Scan_Id });
             await sock.sendMessage(user, { text: MESSAGE }, { quoted: msgsss });
           } catch (err) {
             console.error("Error sending messages:", err);
@@ -101,7 +102,7 @@ SESSION-ID ==> ${sessionId}
           await delay(1000);
           try {
             fs.emptyDirSync(__dirname + "/auth_info_baileys");
-          } catch {}
+          } catch (e) {}
         }
 
         sock.ev.on("creds.update", saveCreds);
@@ -109,28 +110,38 @@ SESSION-ID ==> ${sessionId}
         if (connection === "close") {
           let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
 
-          if (reason === DisconnectReason.restartRequired) {
+          if (reason === DisconnectReason.connectionClosed) {
+            console.log("Connection closed!");
+          } else if (reason === DisconnectReason.connectionLost) {
+            console.log("Connection Lost from Server!");
+          } else if (reason === DisconnectReason.restartRequired) {
             console.log("Restart Required, Restarting...");
             PAIRING().catch((err) => console.log(err));
+          } else if (reason === DisconnectReason.timedOut) {
+            console.log("Connection TimedOut!");
           } else {
-            console.log("Connection closed:", reason);
+            console.log("Connection closed with bot. Please run again.");
+            console.log(reason);
+            await delay(5000);
+            exec("pm2 restart gifted");
+            process.exit(0);
           }
         }
       });
     } catch (err) {
-      console.error("PAIRING error:", err);
+      console.log(err);
+      exec("pm2 restart gifted");
       fs.emptyDirSync(__dirname + "/auth_info_baileys");
     }
-
-    return sessionId;
   }
 
-  let sessionId = await PAIRING();
-  res.json({
-    success: !!sessionId,
-    sessionId: sessionId || null,
-    message: sessionId ? "✅ Session generated!" : "❌ Failed to generate session.",
+  PAIRING().catch(async (err) => {
+    console.log(err);
+    fs.emptyDirSync(__dirname + "/auth_info_baileys");
+    exec("pm2 restart gifted");
   });
+
+  return await PAIRING();
 });
 
 module.exports = router;
