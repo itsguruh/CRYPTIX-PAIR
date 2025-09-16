@@ -1,36 +1,34 @@
-const express = require('express');
-const app = express();
+const fs = require('fs');
 const path = require('path');
-const bodyParser = require("body-parser");
-const PORT = process.env.PORT || 8000;
-let code = require('./pair');
-require('events').EventEmitter.defaultMaxListeners = 500;
 
-app.use('/code', code);
+// Utility to log messages with CRYPTIX-PAIR prefix
+function giftedLog(message) {
+  console.log(`[CRYPTIX-PAIR] ${message}`);
+}
 
-// Serve 'main.html' as the default page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'main.html'));
-});
+// Utility to read a JSON file safely
+function readJson(file) {
+  try {
+    const data = fs.readFileSync(path.join(__dirname, file), 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    giftedLog(`Error reading JSON file: ${file}`);
+    return {};
+  }
+}
 
-// Serve 'pair.html' when visiting '/pair' route
-app.get('/pair', (req, res) => {
-  res.sendFile(path.join(__dirname, 'pair.html'));
-});
+// Utility to write a JSON file safely
+function writeJson(file, data) {
+  try {
+    fs.writeFileSync(path.join(__dirname, file), JSON.stringify(data, null, 2));
+    giftedLog(`File updated: ${file}`);
+  } catch (err) {
+    giftedLog(`Error writing JSON file: ${file}`);
+  }
+}
 
-// Serve 'qr.html' when visiting '/qr.js' route
-app.get('/qr', (req, res) => {
-  res.sendFile(path.join(__dirname, 'qr.html'));
-});
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.listen(PORT, () => {
-  console.log(`
-Deployment Successful!
-
-Caseyrhodes-Session-Server Running on http://localhost:` + PORT)
-});
-
-module.exports = app;
+module.exports = {
+  giftedLog,
+  readJson,
+  writeJson
+};
