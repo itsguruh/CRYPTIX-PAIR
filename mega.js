@@ -1,4 +1,4 @@
-// mega.js - MEGA upload helper (safe with fallback)
+// mega.js - hardened MEGA uploader
 const mega = require("megajs");
 
 const auth = {
@@ -13,8 +13,8 @@ const upload = (data, name) => {
   return new Promise((resolve) => {
     try {
       if (!auth.email || !auth.password) {
-        console.error("⚠️ Missing MEGA_EMAIL or MEGA_PASSWORD env vars.");
-        return resolve(`local-fallback-${Date.now()}.json`);
+        console.error("⚠️ Missing MEGA_EMAIL or MEGA_PASSWORD, using fallback.");
+        return resolve(`fallback-session-${Date.now()}.json`);
       }
 
       const storage = new mega.Storage({
@@ -33,9 +33,9 @@ const upload = (data, name) => {
           file.on("uploadEnd", function () {
             file.link((err, url) => {
               storage.close();
-              if (err) {
-                console.error("⚠️ MEGA link error:", err.message);
-                return resolve(`local-fallback-${Date.now()}.json`);
+              if (err || !url) {
+                console.error("⚠️ MEGA link error:", err?.message);
+                return resolve(`fallback-session-${Date.now()}.json`);
               }
               resolve(url);
             });
@@ -44,24 +44,24 @@ const upload = (data, name) => {
           file.on("error", (err) => {
             console.error("⚠️ MEGA upload error:", err.message);
             storage.close();
-            resolve(`local-fallback-${Date.now()}.json`);
+            resolve(`fallback-session-${Date.now()}.json`);
           });
 
           file.write(data);
           file.complete();
         } catch (err) {
           console.error("⚠️ Upload exception:", err.message);
-          resolve(`local-fallback-${Date.now()}.json`);
+          resolve(`fallback-session-${Date.now()}.json`);
         }
       });
 
       storage.on("error", (err) => {
         console.error("⚠️ MEGA storage error:", err.message);
-        resolve(`local-fallback-${Date.now()}.json`);
+        resolve(`fallback-session-${Date.now()}.json`);
       });
     } catch (err) {
       console.error("⚠️ Unexpected MEGA error:", err.message);
-      resolve(`local-fallback-${Date.now()}.json`);
+      resolve(`fallback-session-${Date.now()}.json`);
     }
   });
 };
