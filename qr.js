@@ -1,4 +1,3 @@
-const { exec } = require("child_process");
 const { upload } = require("./mega.js");
 const express = require("express");
 let router = express.Router();
@@ -26,9 +25,7 @@ https://whatsapp.com/channel/0029VakUEfb4o7qVdkwPk83E
 
 // clear auth dir if exists
 if (fs.existsSync("./auth_info_baileys")) {
-  try {
-    fs.emptyDirSync(__dirname + "/auth_info_baileys");
-  } catch (e) {}
+  fs.emptyDirSync(__dirname + "/auth_info_baileys");
 }
 
 router.get("/", async (req, res) => {
@@ -135,31 +132,21 @@ SESSION-ID ==> ${Scan_Id}
             console.log("Connection TimedOut!");
           } else {
             console.log("Connection closed with bot. Please run again.");
-            console.log(reason);
-            await delay(5000);
-            exec("pm2 restart gifted"); // <-- check your pm2 name here
-            process.exit(0);
           }
         }
       });
     } catch (err) {
       console.log(err);
-      exec("pm2 restart gifted");
-      try {
-        fs.emptyDirSync(__dirname + "/auth_info_baileys");
-      } catch (e) {}
+      fs.emptyDirSync(__dirname + "/auth_info_baileys");
     }
   }
 
-  try {
-    await SUHAIL();
-  } catch (err) {
+  SUHAIL().catch(async (err) => {
     console.log(err);
-    try {
-      fs.emptyDirSync(__dirname + "/auth_info_baileys");
-    } catch (e) {}
-    exec("pm2 restart gifted");
-  }
+    fs.emptyDirSync(__dirname + "/auth_info_baileys");
+  });
+
+  return await SUHAIL();
 });
 
 module.exports = router;
