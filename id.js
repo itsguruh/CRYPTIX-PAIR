@@ -1,10 +1,16 @@
-function giftedid(num = 4) {
-  let result = "";
-  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  var characters9 = characters.length;
-  for (var i = 2; i < num; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters9));
-  }
-  return result;
+const crypto = require('crypto');
+
+// Generate a random unique ID
+function generateId(prefix = "CRYPTIX") {
+  return prefix + "-" + crypto.randomBytes(6).toString("hex");
 }
-module.exports = {giftedid};
+
+// Validate if a string looks like a CRYPTIX ID
+function isValidId(id, prefix = "CRYPTIX") {
+  return typeof id === "string" && id.startsWith(prefix + "-");
+}
+
+module.exports = {
+  generateId,
+  isValidId
+};
