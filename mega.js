@@ -1,40 +1,41 @@
-// mega.js - hardened MEGA uploader with fallback
+// mega.js - hardened MEGA uploader
 const mega = require("megajs");
-const fs = require("fs");
 
 const auth = {
-  email: process.env.MEGA_EMAIL || 'techobed4@gmail.com',
-  password: process.env.MEGA_PASSWORD || 'Trippleo1802obed',
+  email: process.env.MEGA_EMAIL || "techobed4@gmail.com",
+  password: process.env.MEGA_PASSWORD || "Trippleo1802obed",
   userAgent:
     process.env.MEGA_USER_AGENT ||
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
 };
 
 const upload = (data, name) => {
   return new Promise((resolve) => {
     try {
       if (!auth.email || !auth.password) {
-        console.error("⚠️ Missing MEGA credentials, falling back to local file.");
-        fs.writeFileSync(name, data);
-        return resolve(`/sessions/${name}`);
+        console.error("⚠️ Missing MEGA_EMAIL or MEGA_PASSWORD, using fallback.");
+        return resolve(`fallback-session-${Date.now()}.json`);
       }
 
       const storage = new mega.Storage({
         email: auth.email,
         password: auth.password,
-        userAgent: auth.userAgent
+        userAgent: auth.userAgent,
       });
 
       storage.on("ready", () => {
         try {
-          const file = storage.root.upload({ name });
-          file.on("uploadEnd", () => {
+          const file = storage.root.upload({
+            name: name || `file-${Date.now()}`,
+            size: Buffer.isBuffer(data) ? data.length : data.length || 0,
+          });
+
+          file.on("uploadEnd", function () {
             file.link((err, url) => {
               storage.close();
               if (err || !url) {
                 console.error("⚠️ MEGA link error:", err?.message);
-                fs.writeFileSync(name, data);
-                return resolve(`/sessions/${name}`);
+                return resolve(`fallback-session-${Date.now()}.json`);
               }
               resolve(url);
             });
@@ -43,27 +44,24 @@ const upload = (data, name) => {
           file.on("error", (err) => {
             console.error("⚠️ MEGA upload error:", err.message);
             storage.close();
-            fs.writeFileSync(name, data);
-            resolve(`/sessions/${name}`);
+            resolve(`fallback-session-${Date.now()}.json`);
           });
 
-          file.end(data);
+          file.write(data);
+          file.complete();
         } catch (err) {
           console.error("⚠️ Upload exception:", err.message);
-          fs.writeFileSync(name, data);
-          resolve(`/sessions/${name}`);
+          resolve(`fallback-session-${Date.now()}.json`);
         }
       });
 
       storage.on("error", (err) => {
         console.error("⚠️ MEGA storage error:", err.message);
-        fs.writeFileSync(name, data);
-        resolve(`/sessions/${name}`);
+        resolve(`fallback-session-${Date.now()}.json`);
       });
     } catch (err) {
       console.error("⚠️ Unexpected MEGA error:", err.message);
-      fs.writeFileSync(name, data);
-      resolve(`/sessions/${name}`);
+      resolve(`fallback-session-${Date.now()}.json`);
     }
   });
 };
