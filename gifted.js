@@ -1,33 +1,38 @@
-// gifted.js - main entry
 const express = require("express");
+const bodyParser = require("body-parser");
 const path = require("path");
-const fs = require("fs-extra");
 
 const app = express();
+
+// routes
+let server = require("./qr");
+let code = require("./pair");
+
+require("events").EventEmitter.defaultMaxListeners = 500;
+
+app.use("/server", server);
+app.use("/code", code);
+
+app.use("/pair", (req, res) => {
+  res.sendFile(path.join(__dirname, "pair.html"));
+});
+
+app.use("/qr", (req, res) => {
+  res.sendFile(path.join(__dirname, "qr.html"));
+});
+
+app.use("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "main.html"));
+});
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// ✅ Fix: use Heroku’s dynamic port
 const PORT = process.env.PORT || 3000;
 
-// Routers
-const qrRouter = require("./qr.js");
-
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Routes
-app.use("/", qrRouter);
-
-// Health check endpoint (Render needs this to confirm app is alive)
-app.get("/health", (req, res) => {
-  res.status(200).send("✅ Cryptix MD is running!");
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error("❌ Server error:", err.stack);
-  res.status(500).send("Something broke!");
-});
-
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Cryptix MD running on port ${PORT}`);
 });
+
+module.exports = app;
