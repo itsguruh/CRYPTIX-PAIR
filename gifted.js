@@ -1,19 +1,24 @@
-// gifted.js - main server entry
+// gifted.js - main entrypoint
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// import the pair router
-const pairRouter = require("./pair");
+// middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// health check (avoid H13 crash on root "/")
+// import routes
+const pairRouter = require("./pair.js"); // ✅ make sure pair.js is in same folder
+
+// home route
 app.get("/", (req, res) => {
-  res.send("✅ Cryptix Pairing Server is running. Use /code endpoint.");
+  res.send("🚀 Cryptix MD Pairing Server is running!");
 });
 
-// mount pairing route
-app.use("/code", pairRouter);
+// use pair routes
+app.use("/", pairRouter);
 
+// start server
 app.listen(PORT, () => {
   console.log(`🚀 Cryptix MD running on port ${PORT}`);
 });
