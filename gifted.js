@@ -1,34 +1,39 @@
-const fs = require('fs');
-const path = require('path');
+const express = require("express");
+const bodyParser = require("body-parser");
+const path = require("path");
 
-// Utility to log messages with CRYPTIX-PAIR prefix
-function giftedLog(message) {
-  console.log(`[CRYPTIX-PAIR] ${message}`);
-}
+const app = express();
+const PORT = process.env.PORT || 10000;
 
-// Utility to read a JSON file safely
-function readJson(file) {
-  try {
-    const data = fs.readFileSync(path.join(__dirname, file), 'utf-8');
-    return JSON.parse(data);
-  } catch (err) {
-    giftedLog(`Error reading JSON file: ${file}`);
-    return {};
-  }
-}
+// routes
+let server = require("./qr");
+let code = require("./pair");
 
-// Utility to write a JSON file safely
-function writeJson(file, data) {
-  try {
-    fs.writeFileSync(path.join(__dirname, file), JSON.stringify(data, null, 2));
-    giftedLog(`File updated: ${file}`);
-  } catch (err) {
-    giftedLog(`Error writing JSON file: ${file}`);
-  }
-}
+require("events").EventEmitter.defaultMaxListeners = 500;
 
-module.exports = {
-  giftedLog,
-  readJson,
-  writeJson
-};
+app.use("/server", server);
+app.use("/code", code);
+
+app.use("/pair", (req, res) => {
+  res.sendFile(path.join(__dirname, "pair.html"));
+});
+
+app.use("/qr", (req, res) => {
+  res.sendFile(path.join(__dirname, "qr.html"));
+});
+
+app.use("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "main.html"));
+});
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.listen(PORT, () => {
+  console.log(`
+✅ CRYPTIX-PAIR is running!
+Server: http://localhost:${PORT}
+`);
+});
+
+module.exports = app;
