@@ -5,9 +5,9 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// routes
-let server = require('./qr');
-let code = require('./pair');
+// Routes
+let server = require('./qr.js');
+let code = require('./pair.js');
 
 require('events').EventEmitter.defaultMaxListeners = 500;
 
@@ -31,7 +31,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.listen(PORT, () => {
   console.log(`
-✅ CRYPTIX-PAIR is running!
+✅ CRYPTIX-PAIR is running successfully!
 Server: http://localhost:${PORT}
 `);
 });
