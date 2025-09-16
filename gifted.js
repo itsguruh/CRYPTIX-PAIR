@@ -1,39 +1,33 @@
+// gifted.js - main entry
 const express = require("express");
-const bodyParser = require("body-parser");
 const path = require("path");
+const fs = require("fs-extra");
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 
-// routes
-let server = require("./qr");
-let code = require("./pair");
+// Routers
+const qrRouter = require("./qr.js");
 
-require("events").EventEmitter.defaultMaxListeners = 500;
+// Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use("/server", server);
-app.use("/code", code);
+// Routes
+app.use("/", qrRouter);
 
-app.use("/pair", (req, res) => {
-  res.sendFile(path.join(__dirname, "pair.html"));
+// Health check endpoint (Render needs this to confirm app is alive)
+app.get("/health", (req, res) => {
+  res.status(200).send("✅ Cryptix MD is running!");
 });
 
-app.use("/qr", (req, res) => {
-  res.sendFile(path.join(__dirname, "qr.html"));
+// Error handler
+app.use((err, req, res, next) => {
+  console.error("❌ Server error:", err.stack);
+  res.status(500).send("Something broke!");
 });
 
-app.use("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "main.html"));
-});
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
+// Start server
 app.listen(PORT, () => {
-  console.log(`
-✅ CRYPTIX-PAIR is running!
-Server: http://localhost:${PORT}
-`);
+  console.log(`🚀 Cryptix MD running on port ${PORT}`);
 });
-
-module.exports = app;
