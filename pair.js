@@ -5,6 +5,13 @@ const express = require("express");
 let router = express.Router();
 const pino = require("pino");
 const fs = require("fs-extra");
+// pair.js
+const { exec } = require("child_process");
+const { upload } = require("./mega.js");
+const express = require("express");
+let router = express.Router();
+const pino = require("pino");
+const fs = require("fs-extra");
 const { Boom } = require("@hapi/boom");
 
 const MESSAGE =
@@ -24,12 +31,10 @@ https://whatsapp.com/channel/0029VakUEfb4o7qVdkwPk83E
 *🥀 Powered by CRYPTIX MD Bot 🥀*
 `;
 
-// clear auth dir if exists
 if (fs.existsSync("./auth_info_baileys")) {
   fs.emptyDirSync(__dirname + "/auth_info_baileys");
 }
 
-// ✅ Route fixed to /code
 router.get("/code", async (req, res) => {
   const {
     default: makeWASocket,
@@ -39,10 +44,6 @@ router.get("/code", async (req, res) => {
     DisconnectReason,
     makeInMemoryStore,
   } = require("@whiskeysockets/baileys");
-
-  const store = makeInMemoryStore({
-    logger: pino().child({ level: "silent", stream: "store" }),
-  });
 
   async function PAIRING() {
     const { state, saveCreds } = await useMultiFileAuthState(
@@ -63,7 +64,6 @@ router.get("/code", async (req, res) => {
           await delay(3000);
           let user = sock.user.id;
 
-          // random session ID
           function randomMegaId(length = 6, numberLength = 4) {
             const characters =
               "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -86,11 +86,7 @@ router.get("/code", async (req, res) => {
           const string_session = mega_url.replace("https://mega.nz/file/", "");
           const Scan_Id = string_session;
 
-          console.log(`
-====================  SESSION ID  ==========================                   
-SESSION-ID ==> ${Scan_Id}
-------------------------------------------------------------
-`);
+          console.log(`SESSION-ID ==> ${Scan_Id}`);
 
           try {
             let msgsss = await sock.sendMessage(user, { text: Scan_Id });
@@ -99,49 +95,41 @@ SESSION-ID ==> ${Scan_Id}
             console.error("Error sending messages:", err);
           }
 
-          await delay(1000);
           try {
             fs.emptyDirSync(__dirname + "/auth_info_baileys");
           } catch (e) {}
+
+          // ✅ Send response back to browser
+          if (!res.headersSent) {
+            res.json({
+              status: "success",
+              session_id: Scan_Id,
+              mega_url: mega_url,
+            });
+          }
         }
 
         sock.ev.on("creds.update", saveCreds);
 
         if (connection === "close") {
           let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-
-          if (reason === DisconnectReason.connectionClosed) {
-            console.log("Connection closed!");
-          } else if (reason === DisconnectReason.connectionLost) {
-            console.log("Connection Lost from Server!");
-          } else if (reason === DisconnectReason.restartRequired) {
-            console.log("Restart Required, Restarting...");
-            PAIRING().catch((err) => console.log(err));
-          } else if (reason === DisconnectReason.timedOut) {
-            console.log("Connection TimedOut!");
-          } else {
-            console.log("Connection closed with bot. Please run again.");
-            console.log(reason);
-            await delay(5000);
-            exec("pm2 restart gifted");
-            process.exit(0);
-          }
+          console.log("Connection closed, reason:", reason);
         }
       });
     } catch (err) {
-      console.log(err);
-      exec("pm2 restart gifted");
-      fs.emptyDirSync(__dirname + "/auth_info_baileys");
+      console.log("PAIRING error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ status: "error", error: err.message });
+      }
     }
   }
 
   PAIRING().catch(async (err) => {
-    console.log(err);
-    fs.emptyDirSync(__dirname + "/auth_info_baileys");
-    exec("pm2 restart gifted");
+    console.log("PAIRING catch:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ status: "error", error: err.message });
+    }
   });
-
-  return await PAIRING();
 });
 
 module.exports = router;
