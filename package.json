@@ -1,25 +1,18 @@
 {
-  "name": "cryptix-md",
+  "name": "cryptix-pair",
   "version": "1.0.0",
-  "description": "CRYPTIX WhatsApp MD Bot",
+  "description": "CRYPTIX Pairing Server for WhatsApp bot session generation",
   "main": "gifted.js",
   "scripts": {
-    "start": "node gifted.js",
-    "pm2-start": "pm2 start gifted.js --name cryptix",
-    "pm2-stop": "pm2 stop cryptix"
+    "start": "node gifted.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.18",
-    "qrcode": "^1.5.3",
-    "awesome-phonenumber": "^2.64.0",
-    "megajs": "^1.1.0",
-    "pino": "^8.1.0",
-    "phone": "3.1.30",
-    "body-parser": "^1.20.1",
-    "express": "^4.18.1",
-    "pm2": "^5.2.0"
-  },
-  "engines": {
-    "node": ">=20.0.0"
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^6.7.9",
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "fs-extra": "^11.2.0",
+    "pino": "^9.0.0",
+    "qrcode": "^1.5.3"
   }
 }
