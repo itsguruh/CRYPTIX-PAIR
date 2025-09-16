@@ -1,5 +1,5 @@
 {
-  "name": "cryptix-md",
+  "name": "cryptix-pair",
   "version": "1.0.0",
   "description": "CRYPTIX WhatsApp Bot Pairing Server",
   "main": "gifted.js",
@@ -14,6 +14,7 @@
     "fs-extra": "^11.2.0",
     "path": "^0.12.7",
     "pino": "^8.15.0",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "megajs": "^1.1.3"
   }
 }
